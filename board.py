@@ -1,24 +1,59 @@
+"""
+board.py
+
+This module implements the core Sudoku logic including board creation, candidate management,
+and solving strategies such as naked subsets, n-tuples, X-wing, and Y-wing techniques.
+The Sudoku class encapsulates the board state and provides methods to update the board,
+validate input, and apply solving strategies.
+"""
+
 import itertools
 import numpy as np
 from cell import Cell
 
 
 class Sudoku:
-    # DONE!
+    """
+    Represents a Sudoku puzzle and provides methods for board manipulation and solving.
 
-    # TODO: WHENEVER THE BOARD IS SOLVED, TURN THE DIGITS GREEN, NOT JUST WHEN THE SOLVE BUTTON IS PRESSED
-    # TODO: IE. WHEN THE LAST DIGIT IS MANUALLY PLACED OR THE LAST 'GET NEXT CELL' -> 'GET NEXT STEP' IS PRESSED
+    Attributes:
+        board (list[list[Cell]]): A 9x9 grid of Cell instances representing the Sudoku board; each list[Cell] is a row
+        board_assigned_to_cells (bool): Flag indicating if the board has been assigned to each cell.
+        cells (list[Cell]): Flattened list of all Cell instances from the board.
+        cols (list[list[Cell]] | None): List of columns; each column is a list of Cell instances.
+        boxes (list[list[Cell]] | None): List of 3x3 boxes; each box is a list of Cell instances.
+        solved (bool): Indicates whether the board is solved. The value is saved so it isn't rechecked once True
+        pairs (dict): Dictionary for tracking cell pairs and their associated candidate values. A pair is defined to be
+        two cells in a row, column, or box where a digit must go
+    """
     def __init__(self, board: list[list[Cell]]):
+        """
+        Initialize a new Sudoku instance with a given board.
+
+        Args:
+            board (list[list[Cell]]): A 2D list of Cell instances representing the initial Sudoku board.
+        """
         self.board = board
         self.board_assigned_to_cells = False
         self.cells = [c for row in self.board for c in row]
         self.cols = None
         self.boxes = None
-        self.solved = None
+        self.solved = False
         self.pairs = {}
 
     @staticmethod
     def make_sudoku(list_of_rows: list[list[int]]) -> "Sudoku":
+        """
+        Create a Sudoku instance from a list of rows containing integer values.
+
+        Each integer represents the initial value of a cell (0 indicates an empty cell).
+
+        Args:
+            list_of_rows (list[list[int]]): A 2D list of integers representing the Sudoku board.
+
+        Returns:
+            Sudoku: A new Sudoku instance with the corresponding Cell objects.
+        """
         board = []
         for r in range(len(list_of_rows)):  # iterate through the number of rows
             row = []
@@ -28,7 +63,19 @@ class Sudoku:
         return Sudoku(board=board)
 
     def update_sudoku(self, list_of_rows: list[list[int]]) -> list[Cell] | None:
-        """Update the Sudoku instance based on any changes made by the user"""
+        """
+        Update the Sudoku instance based on any changes made by the user.
+
+        This method synchronizes the Sudoku board with the new input values from the UI.
+        It updates each cell accordingly and resets candidates if necessary.
+        If invalid or unfillable cells are detected, those cells are returned.
+
+        Args:
+            list_of_rows (list[list[int]]): A 2D list of integers representing the new board state.
+
+        Returns:
+            list[Cell] | None: A list of cells that are invalid or unfillable, or None if no issues are found.
+        """
         self._assign_board_to_cells()
         updated = False
         reset_candidates = False
@@ -50,18 +97,38 @@ class Sudoku:
                 return invalid_cells + unfillable_cells
 
     def reset_candidates(self) -> None:
-        """Resets the candidates for each unfilled cell back to default"""
+        """
+        Reset the candidates for each unfilled cell back to the default range (1-9).
+
+        After resetting, the method updates candidates based on the current filled cells.
+        """
         for cell in [c for c in self.cells if c.is_empty()]:
             cell.candidates = list(range(9))
         self.update_candidates([c for c in self.cells if not c.is_empty()])
 
-    def _assign_board_to_cells(self):
+    def _assign_board_to_cells(self) -> None:
+        """
+        Assign the current Sudoku instance (board) to each cell if not already assigned.
+
+        This ensures that each cell has a reference to the board it belongs to.
+        """
         if not self.board_assigned_to_cells:
             for c in self.cells:
                 c.set_board(self)
             self.board_assigned_to_cells = True
 
     def _validate_input(self) -> tuple[list[Cell], list[Cell]]:
+        """
+        Validate the current board input for Sudoku rule violations.
+
+        Checks each row, column, and box for duplicate values and cells with no possible candidates.
+        Invalid cells or cells that cannot be filled are returned.
+
+        Returns:
+            tuple[list[Cell], list[Cell]]:
+                - The first list contains invalid cells.
+                - The second list contains cells that are unfillable, i.e. there is no digit that fits in the cell.
+        """
         invalid_cells = []
         unfillable_cells = []
         for rcb in self.get_all_rows() + self.get_all_cols() + self.get_all_boxes():
@@ -77,26 +144,68 @@ class Sudoku:
         return list(set(invalid_cells)), list(set(unfillable_cells))
 
     def get_full_row(self, cell: Cell) -> list[Cell]:
-        # return a list of cells in the row of the given cell, including the cell
+        """
+        Return the full row of cells that the specified cell belongs to.
+
+        Args:
+            cell (Cell): The reference cell.
+
+        Returns:
+            list[Cell]: A list of Cell instances in the same row.
+        """
         return self.board[cell.row]
 
     def get_full_col(self, cell: Cell) -> list[Cell]:
-        # return a list of cells in the column of the given cell, including the cell
+        """
+        Return the full column of cells that the specified cell belongs to.
+
+        Args:
+            cell (Cell): The reference cell.
+
+        Returns:
+            list[Cell]: A list of Cell instances in the same column.
+        """
         return [row[cell.col] for row in self.board]
 
     def get_full_box(self, cell: Cell) -> list[Cell]:
-        # return a list of cells in the row of the given cell, including the cell
+        """
+        Return the full box of cells that the specified cell belongs to.
+
+        Args:
+            cell (Cell): The reference cell.
+
+        Returns:
+            list[Cell]: A list of Cell instances in the same box.
+        """
         return [c for c in self.cells if c.box == cell.box]
 
     def get_all_rows(self) -> list[list[Cell]]:
+        """
+        Retrieve all rows of the Sudoku board.
+
+        Returns:
+            list[list[Cell]]: The board represented as a list of rows.
+        """
         return self.board
 
     def get_all_cols(self) -> list[list[Cell]]:
+        """
+        Retrieve all columns of the Sudoku board. Stores the result in self.cols so we don't have to loop again
+
+        Returns:
+            list[list[Cell]]: The board represented as a list of columns.
+        """
         if not self.cols:
             self.cols = [[row[col] for row in self.board] for col in list(range(9))]
         return self.cols
 
     def get_all_boxes(self) -> list[list[Cell]]:
+        """
+        Retrieve all boxes of the Sudoku board. Stores the result in self.boxes so we don't have to loop again
+
+        Returns:
+            list[list[Cell]]: The board represented as a list of boxes.
+        """
         if not self.boxes:
             self.boxes = []
             for row_num in list(range(3)):
@@ -105,10 +214,27 @@ class Sudoku:
         return self.boxes
 
     def get_cell_from_cord(self, row_num: int, col_num: int) -> Cell:
+        """
+        Get a cell from the board instance based on its row and column coordinates.
+
+        Args:
+            row_num (int): The row number (0-indexed).
+            col_num (int): The column number (0-indexed).
+
+        Returns:
+            Cell: The cell at the specified coordinates.
+        """
         return self.cells[row_num * 9 + col_num]
 
-    def update_candidates(self, new_cells: list[Cell]):
-        # remove each new cells value as a candidate from every cell in its row, col, and box
+    def update_candidates(self, new_cells: list[Cell]) -> None:
+        """
+        Update candidate digits for cells based on new cell values.
+
+        For each new cell provided, remove its value from the candidates of all cells in its row, column, and box.
+
+        Args:
+            new_cells (list[Cell]): A list of cells that have been filled.
+        """
         for new_cell in new_cells:
             cells_to_update = list(set(
                 self.get_full_row(new_cell) + self.get_full_col(new_cell) + self.get_full_box(new_cell)
@@ -119,10 +245,19 @@ class Sudoku:
 
     def find_ntuples(self, one_step: bool = False, fill: bool = True) -> list[Cell | list[Cell]] | list[Cell, list[Cell], str] | None:
         """
-            Returns either
-                - the filled cells resulting from finding tuples of cells within rcb where a number must go
-                - the empty cells whose candidates were updated as a result of finding n-tuples
+        Find n-tuple patterns in rows, columns, or boxes where a digit must go.
 
+        This method first attempts to find cells where a digit has only one possible location in a row, column or box.
+        If such a scenario is found, the cells are filled. Otherwise, it searches for
+        n-tuple candidate patterns that allow candidate elimination.
+
+        Args:
+            one_step (bool): If True, return after the first logical deduction.
+            fill (bool): If True, fill in the cell with the determined digit.
+
+        Returns:
+            list[Cell] | list[Cell, list[Cell], str] | None:
+            Either a list of filled cells, a list of tuples with elimination info, or None if no deductions were made.
         """
         found_cells = []
         removed_candidates = []
@@ -175,16 +310,26 @@ class Sudoku:
                                 return removed_candidates
         return removed_candidates
 
-    def find_ncandidates(self, one_step: bool = False, fill: bool = True, max_n: int = 3):
+    def find_ncandidates(self, one_step: bool = False, fill: bool = True, min_n: int = 1, max_n: int = 3) -> (
+            list[Cell] | list[tuple[Cell, list[Cell], str]]):
         """
-        Arguments:
-            - one_step: if True, return the found information after only one logical step
-            - fill: if True, fill the cell with the found value
-            - max_n: the greatest size set of candidates to check for
-        Returns either:
-            - the filled cells resulting from finding cells with only one candidate, or
-            - a list containing a tuple (cell, naked_subset, info_str) where an elimination was performed to a naked
-            subset found in a row, column, or box.
+        Find naked candidate subsets (n-candidates) within rows, columns, or boxes.
+
+        A naked subset is found when a group of n empty cells in a unit have a union of candidates
+        exactly of size n. In such a case, these candidates can be eliminated from all other cells in the unit.
+        Additionally, if the naked subset is in a box and confined to one row or column (pointing technique),
+        the candidates can be eliminated from the entire row or column.
+
+        Args:
+            one_step (bool): If True, return after the first deduction.
+            fill (bool): If True, fill the cell when a single candidate is found.
+            min_n (int): Minimum number of cells to consider in a subset.
+            max_n (int): Maximum number of cells to consider in a subset.
+
+        Returns:
+            list[Cell] | list[tuple[Cell, list[Cell], str]]:
+            Either a list of filled cells, or a list of tuples containing
+            the cell updated, the naked subset, and an explanation string.
         """
         removed_candidates = []
         found_cells = []
@@ -202,7 +347,7 @@ class Sudoku:
 
             # Consider all subsets of cells within this unit
             # Since a unit has at most 9 cells, iterating through all subsets is acceptable
-            for n in range(1, max_n + 1):
+            for n in range(min_n, max_n + 1):
                 # Only consider cells that are not already filled
                 candidate_cells = [cell for cell in rcb if cell.is_empty()]
                 for cell_subset in itertools.combinations(candidate_cells, n):
@@ -273,16 +418,22 @@ class Sudoku:
 
     def add_pair(self, c1: Cell, c2: Cell, val: int) -> list[tuple[Cell, list[Cell], str]]:
         """
-           Adds a pair (c1, c2) with the associated value 'val' into the dictionary. Returns the cells where at least
-           one candidate was removed from it due to the new pair.
+        Add a pair of cells with an associated candidate value and apply X-wing elimination if applicable.
 
-           If the pair exists (in either order) with the same value, returns [] since no new cells were found.
-           If the pair exists with a different value, val2, the pair of cells must be the digits val and val2 in some
-           order.
-           If no pair exists, adds the new pair
+        This method adds the pair (c1, c2) to the internal dictionary of pairs. If the pair already exists
+        with the same value, no new candidates are removed. If the pair exists with a different value,
+        candidates that are not part of the pair are removed from the cells since c1 and c2 must be exactly
+        those two values. It also checks for and applies the X-wing strategy based on existing pairs.
 
-           In the latter cases, we check if the new pair has created an X-wing pattern, and return the cells where we
-           are able to remove at least one candidate
+        Args:
+            c1 (Cell): The first cell of the pair.
+            c2 (Cell): The second cell of the pair.
+            val (int): The value that must be contained in one of c1 or c2.
+
+        Returns:
+            list[tuple[Cell, list[Cell], str]]:
+            A list of tuples where each tuple contains a cell from which
+            a candidate was removed, the pair of cells involved, and an explanatory string.
         """
         removed_candidates = []
         key = (c1, c2)
@@ -290,7 +441,26 @@ class Sudoku:
         _sentinel = object()
         current_val = self.pairs.get(key, self.pairs.get(reverse_key, _sentinel))
 
-        def check_xwing():
+        def check_xwing() -> list[tuple[Cell, list[Cell], str]]:
+            """
+            Identifies and applies the X-Wing pattern in a Sudoku grid to eliminate invalid candidates.
+
+            The X-Wing pattern occurs when a digit appears in exactly two cells in two separate rows
+            and those cells are aligned in the same two columns (or vice versa with columns and rows).
+            This forms a rectangle of four cells, where the digit must be placed in one of the two
+            cells in each row (or column), effectively locking its position.
+
+            Since the digit must occupy one of these positions in each row (or column), it cannot
+            appear elsewhere in those rows (or columns). This allows us to eliminate the digit from
+            other candidates in the affected rows and columns.
+
+            Returns:
+                list[tuple[Cell, list[Cell], str]]:
+                A list of tuples, each containing:
+                    - The cell where a candidate was removed.
+                    - The set of four cells forming the X-Wing pattern.
+                    - A string describing the reason for removal.
+            """
             rmvd_candidates = []
             for existing_pair_key, existing_pair_val in self.pairs.items():
                 cells = set(key + existing_pair_key)
@@ -339,49 +509,82 @@ class Sudoku:
             self.pairs[key] = val  # Pair does not exist in either order, so add it
             return removed_candidates
 
-    def check_ywing(self, one_step: bool = False) -> list[tuple[Cell, Cell, Cell, Cell, Cell]]:
-        """Searches for Y-wing patterns across the puzzle. For each Y-wing that is found, return the pivot cell, its
-        two wing cells, the value c, and the cell that can no longer have the value c as a candidate
+    def check_ywing(self, one_step: bool = False) -> list[tuple[Cell, Cell, Cell, int, Cell]]:
+        """
+        Search for Y-Wing patterns in the puzzle and eliminate invalid candidates.
+
+        The Y-Wing pattern is a type of chain that involves three cells, where:
+        - A "pivot" cell contains exactly two candidates (X and Y).
+        - Two "wing" cells, each sharing one candidate with the pivot, and one with each other (X-Z and Y-Z).
+        - The wing cells do not share a row, column, or box with each other
+
+        Since the pivot cell must contain either X or Y, one of the wing cells must contain Z.
+        Therefore, any other cell that shares a unit with both wing cells cannot contain Z, allowing
+        for candidate elimination.
+
+        Args:
+            one_step (bool): If True, return after the first Y-Wing deduction.
+
+        Returns:
+            list[tuple[Cell, Cell, Cell, Cell, int]]:
+            A list of tuples containing:
+                - The pivot cell.
+                - The first wing cell.
+                - The second wing cell.
+                - The cell from which a candidate is removed.
+                - The eliminated candidate value.
         """
         removed_candidates = []
         doubles = [c for c in self.cells if len(c.candidates) == 2]  # any cell with exactly 2 candidates
         y_wings = []
 
         for pivot in doubles:
-            pivot_cand_a, pivot_cand_b = pivot.candidates
+            pivot_cand_x, pivot_cand_y = pivot.candidates
 
-            # WingA: must share a rcb with pivot AND share the candidate a, but NOT b
-            wing_a_candidates = [c for c in doubles
+            # WingX: must share a rcb with pivot AND share the candidate x, but NOT y
+            wing_x_candidates = [c for c in doubles
                                  if c is not pivot and c.shares_unit(pivot)
-                                 and pivot_cand_a in c.candidates and pivot_cand_b not in c.candidates]
+                                 and pivot_cand_x in c.candidates and pivot_cand_y not in c.candidates]
 
-            # WingB: must share a rcb with pivot AND share the candidate b, but NOT a
-            wing_b_candidates = [c for c in doubles
+            # WingY: must share a rcb with pivot AND share the candidate y, but NOT x
+            wing_y_candidates = [c for c in doubles
                                  if c is not pivot and c.shares_unit(pivot)
-                                 and pivot_cand_b in c.candidates and pivot_cand_a not in c.candidates]
+                                 and pivot_cand_y in c.candidates and pivot_cand_x not in c.candidates]
 
-            for wing_a in wing_a_candidates:
-                # wing_a has candidates [a,c], we need wing_b such that it has candidates [b,c]
-                c = wing_a.candidates[0] if wing_a.candidates[0] != pivot_cand_a else wing_a.candidates[1]
-                for wing_b in wing_b_candidates:
-                    # a, b, c are unique, thus if c is in wing_b.candidates, wing_a and wing_b form a Y-wing
-                    if c in wing_b.candidates and not wing_a.shares_unit(wing_b):
-                        y_wings.append((pivot, wing_a, wing_b, c))
+            for wing_x in wing_x_candidates:
+                # wing_x has candidates [x,z], we need wing_y such that it has candidates [y,z]
+                z = wing_x.candidates[0] if wing_x.candidates[0] != pivot_cand_x else wing_x.candidates[1]
+                for wing_y in wing_y_candidates:
+                    # x, y, z are unique, thus if z is in wing_y.candidates, wing_x and wing_y form a Y-wing
+                    if z in wing_y.candidates and not wing_x.shares_unit(wing_y):
+                        y_wings.append((pivot, wing_x, wing_y, z))
 
         for y_wing in y_wings:
-            # any cell that can see both wing_a and wing_b CANNOT have the value c, since one of A or B is c
-            pivot, wingA, wingB, c = y_wing
+            # any cell that can see both wing_x and wing_y CANNOT have the value z, since one of X or Y is z
+            pivot, wingx, wingy, z = y_wing
             for cell in [c for c in self.cells if c.is_empty()]:
-                if cell.shares_unit(wingA) and cell.shares_unit(wingB) and c in cell.candidates:
-                    cell.remove_candidates([c])
-                    removed_candidates.append((pivot, wingA, wingB, c, cell))
+                if cell.shares_unit(wingx) and cell.shares_unit(wingy) and z in cell.candidates:
+                    cell.remove_candidates([z])
+                    removed_candidates.append((pivot, wingx, wingy, z, cell))
             if one_step and removed_candidates:
                 return removed_candidates
 
         return removed_candidates
 
-    def solve(self) -> None | list[Cell] | list[list[Cell]]:
-        # returns a solved Sudoku board
+    def solve(self) -> list[Cell] | list[list[Cell]]:
+        """
+        Solve the Sudoku puzzle using available strategies.
+
+        The method first updates candidates and validates the input. It then repeatedly applies
+        solving strategies (n-tuple finding, Y-wing, and naked candidate elimination) until the board
+        is solved or no further progress can be made.
+
+        Returns:
+            list[Cell] | list[list[Cell]]:
+                - A solved board if successful.
+                - A list of cells if there are invalid or unfillable cells.
+                - Otherwise, the board state after exhausting solving strategies.
+        """
         self.update_candidates([c for c in self.cells if not c.is_empty()])  # the whole board is new at the start
         invalid_cells, unfillable_cells = self._validate_input()
         if invalid_cells or unfillable_cells:
@@ -400,15 +603,21 @@ class Sudoku:
 
     def get_next_step(self, fill: bool = False) -> tuple[Cell, str] | list[Cell] | list[tuple[Cell, list[Cell], str]] | str | None:
         """
-            Gets the next logical step in solving the puzzle
+        Get the next logical step in solving the puzzle.
 
-            fill: If True, fill in the found cell
+        This method updates candidates, validates input, and then attempts to find the next move
+        using various strategies. Depending on the deduction, it returns one of the following:
+          - A tuple (Cell, str) if a new cell can be filled with an explanation.
+          - A list of cells if invalid or unfillable cells are found.
+          - A list of tuples (Cell, list[Cell], str) if candidate elimination occurred.
+          - A string if no logical next step can be determined.
+          - None if the board is already solved.
 
-            returns:
-                - A list of cells if there are invalid and/or unfillable cells
-                - A tuple (Cell, str) if a new cell can be filled
-                - A list of tuples (Cell, list[Cell], str) if at least one cell has had candidates removed from it
-                - A string if no next step could be found
+        Args:
+            fill (bool): If True, fill in the found cell with the deduced digit.
+
+        Returns:
+            tuple[Cell, str] | list[Cell] | list[tuple[Cell, list[Cell], str]] | str | None: The next step information.
         """
         self.update_candidates([c for c in self.cells if not c.is_empty()])
         invalid_cells, unfillable_cells = self._validate_input()
@@ -457,10 +666,25 @@ class Sudoku:
                                   f"(r{wingB.row + 1}, c{wingB.col + 1}) to be the digit {c}!")
                     update_packages.append((updated_cell, [pivot, wingA, wingB], return_str))
                 return update_packages
+            elif new_cells:= self.find_ncandidates(one_step=True, fill=fill, min_n=4, max_n=8):
+                new_cell = new_cells[0]
+                if type(new_cell) == Cell:
+                    return new_cell, (f"{new_cell.value} is the only digit that can go in row {new_cell.row + 1}, column "
+                                  f"{new_cell.col + 1}!")
+                else:
+                    return new_cells
             else:
-                return "No next cell could be found for the given configuration, ensure the board is unique!"
+                return "No next step could be found for the given configuration, ensure the board is unique!"
 
     def board_solved(self) -> bool:
+        """
+        Check if the Sudoku board is solved.
+
+        The board is considered solved if every row, column, and box contains the digits 1 through 9 exactly once.
+
+        Returns:
+            bool: True if the board is solved, False otherwise.
+        """
         if self.solved or all([sorted([cell.value for cell in rcb]) == list(range(1,10)) for rcb in (
             self.get_all_rows() + self.get_all_cols() + self.get_all_boxes()
         )]):
@@ -469,6 +693,14 @@ class Sudoku:
         else:
             return False
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """
+        Return a string representation of the Sudoku board.
+
+        The board is formatted as a NumPy matrix with each cell's value.
+
+        Returns:
+            str: The string representation of the board.
+        """
         return str(np.matrix([[cell.value for cell in row] for row in self.board]))
 

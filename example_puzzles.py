@@ -1,7 +1,22 @@
+"""
+example_puzzles.py
+
+This module provides a collection of example Sudoku puzzles categorized by difficulty levels.
+Each difficulty level (EASY, MEDIUM, HARD) contains a list of Sudoku puzzles represented as a
+9x9 grid of integers. A 0 indicates an empty cell.
+"""
 from enum import Enum
 
 
 class ExamplePuzzles(Enum):
+    """
+    Enum for categorizing example Sudoku puzzles by difficulty.
+
+    Members:
+        EASY: A list of easy puzzles.
+        MEDIUM: A list of medium puzzles.
+        HARD: A list of hard puzzles.
+    """
     EASY = [
         [
             [4,0,0,0,0,9,0,0,1],
