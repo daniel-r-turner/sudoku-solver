@@ -62,26 +62,33 @@ class SudokuGrid(ctk.CTkFrame):
                         ro (int): The row index of the cell.
                         co (int): The column index of the cell.
                     """
-                    cl.configure(font=("Roboto", 14))
-                    if parent.sudoku_grid is not None:
-                        existing_board_cell = parent.sudoku_grid.get_cell_from_cord(row_num=ro, col_num=co)
-                        if existing_board_cell.value != 0:
-                            cells_to_fix = set(parent.sudoku_grid.get_full_row(cell=existing_board_cell) +
-                                               parent.sudoku_grid.get_full_col(cell=existing_board_cell) +
-                                               parent.sudoku_grid.get_full_box(cell=existing_board_cell))
-                            cells_to_fix.remove(existing_board_cell)
-                            for c in [ctf for ctf in cells_to_fix if ctf.is_empty()]:
-                                c.add_candidate(existing_board_cell.value)
-                    parent.update_grid(update=True)
-                    parent.show_candidates()
-                    if parent.sudoku_grid.board_solved():
-                        parent.log_text.configure(text_color="green", text="Congratulations!")
-                        for r in range(9):
-                            for c in range(9):
-                                cell_entry = parent.grid_frame.cells[r][c]
-                                cell_entry.configure(text_color="green")
-                    else:
-                        parent.log_text.configure(text="")
+                    if args[0].keysym == 'space':
+                        cl.delete(0)
+                    if args[0].keysym == 'BackSpace':
+                        if cl.get() == '':
+                            cl.configure(font=("Arial", 8))
+                    if any(args[0].keysym == str(n) for n in range(0,10)):
+                        cl.configure(font=("Roboto", 14))
+                    if args[0].keysym in ['BackSpace', 'space'] or any(args[0].keysym == str(n) for n in range(0,10)):
+                        if parent.sudoku_grid is not None:
+                            existing_board_cell = parent.sudoku_grid.get_cell_from_cord(row_num=ro, col_num=co)
+                            if existing_board_cell.value != 0:
+                                cells_to_fix = set(parent.sudoku_grid.get_full_row(cell=existing_board_cell) +
+                                                   parent.sudoku_grid.get_full_col(cell=existing_board_cell) +
+                                                   parent.sudoku_grid.get_full_box(cell=existing_board_cell))
+                                cells_to_fix.remove(existing_board_cell)
+                                for c in [ctf for ctf in cells_to_fix if ctf.is_empty()]:
+                                    c.add_candidate(existing_board_cell.value)
+                        parent.update_grid(update=True)
+                        parent.show_candidates()
+                        if parent.sudoku_grid.board_solved():
+                            parent.log_text.configure(text_color="green", text="Congratulations!")
+                            for r in range(9):
+                                for c in range(9):
+                                    cell_entry = parent.grid_frame.cells[r][c]
+                                    cell_entry.configure(text_color="green")
+                        else:
+                            parent.log_text.configure(text="")
                 cell.bind("<KeyRelease>", _on_key_release)
                 cell.grid(row=row, column=col, padx=2, pady=2)
                 row_cells.append(cell)

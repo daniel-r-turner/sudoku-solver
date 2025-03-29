@@ -157,11 +157,11 @@ class SudokuApp(ctk.CTk):
         """
         if not self.sudoku_grid:
             self.sudoku_grid = Sudoku.make_sudoku(list_of_rows=[
-                [int(cell.get()) if cell.get() != '' else 0 for cell in row] for row in self.grid_frame.cells
+                [int(cell.get()) if cell.get().strip() != '' else 0 for cell in row] for row in self.grid_frame.cells
             ])
         elif update:
             self.sudoku_grid.update_sudoku(list_of_rows=[
-                [int(cell.get()) if cell.get() != '' else 0 for cell in row] for row in self.grid_frame.cells
+                [int(cell.get()) if cell.get().strip() != '' else 0 for cell in row] for row in self.grid_frame.cells
             ])
 
     def clear_grid(self, delete: bool = True) -> None:
