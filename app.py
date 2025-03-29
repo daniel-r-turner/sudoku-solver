@@ -135,7 +135,7 @@ class SudokuApp(ctk.CTk):
             # returned a board
             colour = "green" if self.sudoku_grid.board_solved() else "red"
             self.log_text.configure(
-                text_color=colour, text="Success" if colour == "green" else "Board could not be solved"
+                text_color=colour, text="Board solved!" if colour == "green" else "Board could not be solved"
             )
             for row in range(9):
                 for col in range(9):
@@ -153,6 +153,15 @@ class SudokuApp(ctk.CTk):
         self.clear_grid(delete=False)
 
         result = self.sudoku_grid.get_next_step(fill=True)
+        if self.sudoku_grid.board_solved():
+            self.log_text.configure(text_color="green", text="Board solved!")
+            for row in range(9):
+                for col in range(9):
+                    cell = self.grid_frame.cells[row][col]
+                    if not cell.get():
+                        cell.insert(0, str(self.sudoku_grid.get_cell_from_cord(row_num=row, col_num=col).value))
+                    cell.configure(text_color="green")
+            return
 
         if type(result) == tuple:
             new_cell = result[0]

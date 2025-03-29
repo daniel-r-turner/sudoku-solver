@@ -4,10 +4,6 @@ from cell import Cell
 
 
 class Sudoku:
-    # TODO: FOR ALL SOLVING STRATEGIES, SWITCH MAX_CELLS: INT WITH ONE_STEP: BOOL, SO THAT THE FUNCTION IS OPTIMIZED FOR BOTH
-    # TODO: IE, FOR ONE_STEP=FALSE, WE SHOULD KEEP REMOVING CANDIDATES UNTIL THERE ARE NO MORE TO FIND
-    # TODO: FOR ONE_STEP=TRUE, WE SHOULD ONLY REMOVE CELLS FROM ONE LOGICAL CONCLUSION
-
     # DONE!
 
     # TODO: WHENEVER THE BOARD IS SOLVED, TURN THE DIGITS GREEN, NOT JUST WHEN THE SOLVE BUTTON IS PRESSED
@@ -311,7 +307,8 @@ class Sudoku:
                     for cell in cells_to_update:
                         if val in cell.candidates:
                             cell.remove_candidates([val])
-                            info_str = (f"An X-wing in rows {rows} and columns {cols} does not allow (r{cell.row + 1}, "
+                            info_str = (f"An X-wing in rows {tuple([r + 1 for r in rows])} and columns "
+                                        f"{tuple([c + 1 for c in cols])} does not allow (r{cell.row + 1}, "
                                         f"c{cell.col + 1}) to be the digit {val}")
                             rmvd_candidates.append((cell, cells, info_str))
                     return rmvd_candidates

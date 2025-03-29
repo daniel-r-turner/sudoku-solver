@@ -24,7 +24,8 @@ class Cell:
                 self.candidates.remove(c)
 
     def add_candidate(self, candidate_to_add: int) -> None:
-        self.candidates.append(candidate_to_add)
+        if candidate_to_add not in self.candidates:
+            self.candidates.append(candidate_to_add)
 
     def shares_unit(self, cell: "Cell") -> bool:
         return cell.row == self.row or cell.col == self.col or cell.box == self.box
