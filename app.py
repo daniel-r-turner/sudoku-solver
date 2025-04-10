@@ -48,6 +48,7 @@ class SudokuApp(ctk.CTk):
         super().__init__()
         self.title("Sudoku Solver")
         self.geometry("700x800")
+        self.iconbitmap("Logo.ico")
 
         self.show_cand_frame = ctk.CTkFrame(self)
         self.show_cand_frame.pack(pady=20)
