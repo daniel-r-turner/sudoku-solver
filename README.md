@@ -1,5 +1,7 @@
 # Sudoku Solver
 
+![Image](https://github.com/user-attachments/assets/d4f02376-9836-4fcb-9cb4-b210a931368d)
+
 An interactive Sudoku Solver built with Python and CustomTkinter. Solve puzzles, get hints, and view candidate digits using logical techniques like naked subsets, n-tuples, X-wing, and Y-wing.
 
 ## Table of Contents
