@@ -8,6 +8,8 @@ and receive hints for logical next steps.
 """
 
 import customtkinter as ctk
+import os
+import sys
 
 from board import Sudoku
 from cell import Cell
@@ -48,7 +50,12 @@ class SudokuApp(ctk.CTk):
         super().__init__()
         self.title("Sudoku Solver")
         self.geometry("700x800")
-        self.iconbitmap("Logo.ico")
+
+        if getattr(sys, "frozen", False):
+            icon_path = os.path.join(sys._MEIPASS, "Logo.ico")
+        else:
+            icon_path = "Logo.ico"
+        self.iconbitmap(icon_path)
 
         self.show_cand_frame = ctk.CTkFrame(self)
         self.show_cand_frame.pack(pady=20)
